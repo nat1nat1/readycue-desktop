@@ -1,0 +1,38 @@
+appId: ai.readycue.desktop
+productName: ReadyCue
+copyright: Copyright © 2026 ReadyCue
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - assets/**/*
+  - "!**/*.ts"
+  - "!**/*.map"
+
+mac:
+  category: public.app-category.productivity
+  icon: assets/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - universal
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    NSMicrophoneUsageDescription: "ReadyCue needs microphone access to capture your voice during live interview sessions."
+    NSScreenCaptureUsageDescription: "ReadyCue needs screen recording permission to capture system audio during live interview sessions so it can transcribe what others are saying."
+
+dmg:
+  sign: false
+
+afterSign: scripts/notarize.js
+
+publish:
+  provider: github
+  owner: nat1nat1
+  repo: readycue-desktop

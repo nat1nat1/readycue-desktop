@@ -1,0 +1,28 @@
+{
+  "name": "readycue-desktop",
+  "version": "0.1.0",
+  "description": "ReadyCue Desktop — AI interview coaching with system audio capture",
+  "main": "dist/main/index.js",
+  "author": "ReadyCue",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "tsc && electron .",
+    "build": "tsc",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "@electron/notarize": "^2.5.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "electron-audio-loopback": "^1.0.0",
+    "electron-store": "^10.0.0",
+    "electron-updater": "^6.3.0"
+  }
+}
