@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, desktopCapturer, ipcMain, shell } from "electron";
 import { initMain } from "electron-audio-loopback";
 import * as path from "path";
 import { createTray } from "./tray";
@@ -20,6 +20,12 @@ ipcMain.on("get-app-version", (event) => {
   event.returnValue = app.getVersion();
 });
 
+ipcMain.handle("open-external", (_event, url: string) => {
+  if (typeof url === "string" && (url.startsWith("http") || url.startsWith("x-apple."))) {
+    return shell.openExternal(url);
+  }
+});
+
 const READYCUE_URL = process.env.READYCUE_URL || "https://readycue.ai";
 const IS_DEV = READYCUE_URL.includes("localhost");
 
@@ -33,7 +39,7 @@ function createWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 600,
     titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 16, y: 16 },
+    trafficLightPosition: { x: 16, y: 13 },
     backgroundColor: "#0a0b1a",
     show: false,
     webPreferences: {
@@ -48,6 +54,12 @@ function createWindow(): BrowserWindow {
 
   win.once("ready-to-show", () => {
     win.show();
+  });
+
+  // Auto-select screen source for getDisplayMedia (bypasses macOS picker dialog)
+  win.webContents.session.setDisplayMediaRequestHandler(async (_request, callback) => {
+    const sources = await desktopCapturer.getSources({ types: ["screen"] });
+    callback({ video: sources[0], audio: "loopback" });
   });
 
   // Open external links in the default browser

@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   platform: process.platform,
   appVersion: ipcRenderer.sendSync("get-app-version") as string,
 
+  openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
+
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   restartToUpdate: () => ipcRenderer.invoke("restart-to-update"),
   onUpdateStatus: (callback: (status: Record<string, unknown>) => void) => {

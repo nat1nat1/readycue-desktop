@@ -6,13 +6,12 @@ let tray: Tray | null = null;
 export function createTray(mainWindow: BrowserWindow): void {
   const iconPath = path.join(__dirname, "..", "..", "assets", "trayTemplate.png");
 
-  // Use a fallback 16x16 empty image if the asset doesn't exist yet
-  let icon: Electron.NativeImage;
-  try {
-    icon = nativeImage.createFromPath(iconPath);
-  } catch {
+  let icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) {
+    console.warn(`[tray] Icon not found at ${iconPath}, using empty fallback`);
     icon = nativeImage.createEmpty();
   }
+  icon.setTemplateImage(true);
 
   tray = new Tray(icon);
   tray.setToolTip("ReadyCue");
