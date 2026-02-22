@@ -12,7 +12,8 @@
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac"
+    "dist:mac": "electron-builder --mac",
+    "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@electron/notarize": "^2.5.0",
