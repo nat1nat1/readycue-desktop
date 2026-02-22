@@ -3,6 +3,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Load Apple credentials for notarization
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
+
 VERSION=$(node -p "require('./package.json').version")
 TAG="v$VERSION"
 DMG="release/ReadyCue-${VERSION}-universal.dmg"
@@ -22,6 +29,12 @@ if gh release view "$TAG" --repo nat1nat1/readycue-desktop &>/dev/null; then
   echo "✗ Release $TAG already exists on GitHub."
   echo "  Bump the version in package.json first."
   exit 1
+fi
+
+if [[ -z "${APPLE_ID:-}" || -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]]; then
+  echo "⚠ APPLE_ID or APPLE_APP_SPECIFIC_PASSWORD not set — notarization will be skipped"
+  echo "  Create a .env file with APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, and APPLE_TEAM_ID"
+  echo ""
 fi
 
 # 1. Compile TypeScript
