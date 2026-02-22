@@ -29,6 +29,8 @@ mac:
 
 dmg:
   sign: false
+  background: assets/dmg-background.png
+  iconSize: 80
   contents:
     - x: 130
       y: 220
