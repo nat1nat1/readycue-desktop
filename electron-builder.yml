@@ -20,6 +20,7 @@ protocols:
 mac:
   category: public.app-category.productivity
   icon: assets/icon.icns
+  artifactName: "ReadyCue-universal.${ext}"
   target:
     - target: dmg
       arch:

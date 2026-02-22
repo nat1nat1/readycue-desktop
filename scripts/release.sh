@@ -12,8 +12,8 @@ fi
 
 VERSION=$(node -p "require('./package.json').version")
 TAG="v$VERSION"
-DMG="release/ReadyCue-${VERSION}-universal.dmg"
-BLOCKMAP="release/ReadyCue-${VERSION}-universal.dmg.blockmap"
+DMG="release/ReadyCue-universal.dmg"
+BLOCKMAP="release/ReadyCue-universal.dmg.blockmap"
 MANIFEST="release/latest-mac.yml"
 
 echo "==> ReadyCue Desktop $TAG"
