@@ -7,6 +7,15 @@ import { setupAutoUpdater } from "./auto-update";
 // Must be called before app.ready to set Chromium flags
 initMain();
 
+// Register as default handler for readycue:// protocol
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("readycue", process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient("readycue");
+}
+
 ipcMain.on("get-app-version", (event) => {
   event.returnValue = app.getVersion();
 });
@@ -72,7 +81,7 @@ app.on("ready", () => {
   createTray(mainWindow);
 
   if (!IS_DEV) {
-    setupAutoUpdater();
+    setupAutoUpdater(mainWindow);
   }
 });
 
@@ -82,6 +91,17 @@ app.on("activate", () => {
     mainWindow.show();
   } else {
     mainWindow = createWindow();
+  }
+});
+
+// Handle readycue:// deep links (macOS)
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  const route = url.replace("readycue://", "/").replace(/\/$/, "") || "/";
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.loadURL(`${READYCUE_URL}${route}`);
   }
 });
 

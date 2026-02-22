@@ -12,6 +12,11 @@ files:
   - "!**/*.ts"
   - "!**/*.map"
 
+protocols:
+  - name: ReadyCue
+    schemes:
+      - readycue
+
 mac:
   category: public.app-category.productivity
   icon: assets/icon.icns
