@@ -1,4 +1,4 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, shell } from "electron";
+import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, shell } from "electron";
 import { initMain } from "electron-audio-loopback";
 import * as path from "path";
 import { createTray } from "./tray";
@@ -91,6 +91,10 @@ function createWindow(): BrowserWindow {
 app.on("ready", () => {
   mainWindow = createWindow();
   createTray(mainWindow);
+
+  globalShortcut.register("CmdOrCtrl+Shift+I", () => {
+    mainWindow?.webContents.toggleDevTools();
+  });
 
   if (!IS_DEV) {
     setupAutoUpdater(mainWindow);
