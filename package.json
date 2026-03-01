@@ -1,6 +1,6 @@
 {
   "name": "readycue-desktop",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "ReadyCue Desktop — AI interview coaching with system audio capture",
   "main": "dist/main/index.js",
   "author": "ReadyCue",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "electron-audio-loopback": "^1.0.0",
-    "electron-store": "^10.0.0",
+    "electron-store": "^8.2.0",
     "electron-updater": "^6.3.0"
   }
 }
