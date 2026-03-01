@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   appVersion: ipcRenderer.sendSync("get-app-version") as string,
 
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
+  getWebTarget: () => ipcRenderer.invoke("get-web-target"),
+  setWebTarget: (target: "prod" | "local") => ipcRenderer.invoke("set-web-target", target),
 
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   restartToUpdate: () => ipcRenderer.invoke("restart-to-update"),

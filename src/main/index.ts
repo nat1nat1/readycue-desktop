@@ -1,5 +1,6 @@
 import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, shell } from "electron";
 import { initMain } from "electron-audio-loopback";
+import Store from "electron-store";
 import * as path from "path";
 import { createTray } from "./tray";
 import { setupAutoUpdater } from "./auto-update";
@@ -26,11 +27,79 @@ ipcMain.handle("open-external", (_event, url: string) => {
   }
 });
 
-const READYCUE_URL = process.env.READYCUE_URL || "https://readycue.ai";
-const IS_DEV = READYCUE_URL.includes("localhost");
+type WebTarget = "prod" | "local";
+type PreferencesStore = {
+  get: (key: "webTarget", defaultValue: WebTarget) => WebTarget;
+  set: (key: "webTarget", value: WebTarget) => void;
+};
+
+const PROD_URL = "https://readycue.ai";
+const LOCAL_URL = "http://localhost:3000";
+const ENV_READYCUE_URL = process.env.READYCUE_URL?.trim();
+const preferences = new (Store as unknown as {
+  new (options: { name: string; defaults: { webTarget: WebTarget } }): PreferencesStore;
+})({
+  name: "readycue-desktop-preferences",
+  defaults: {
+    webTarget: "prod",
+  },
+});
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
+let currentWebTarget: WebTarget = preferences.get("webTarget", "prod");
+
+function isLocalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function getResolvedBaseUrl(): string {
+  if (ENV_READYCUE_URL) return ENV_READYCUE_URL;
+  return currentWebTarget === "local" ? LOCAL_URL : PROD_URL;
+}
+
+function getEffectiveWebTarget(): WebTarget {
+  return isLocalUrl(getResolvedBaseUrl()) ? "local" : "prod";
+}
+
+function getCurrentRoutePath(win: BrowserWindow): string {
+  const currentUrl = win.webContents.getURL();
+  if (!currentUrl) return "/";
+
+  try {
+    const parsed = new URL(currentUrl);
+    const route = `${parsed.pathname}${parsed.search}${parsed.hash}`.trim();
+    return route || "/";
+  } catch {
+    return "/";
+  }
+}
+
+ipcMain.handle("get-web-target", () => {
+  return getEffectiveWebTarget();
+});
+
+ipcMain.handle("set-web-target", (_event, target: WebTarget) => {
+  if (target !== "prod" && target !== "local") {
+    throw new Error("invalid_web_target");
+  }
+
+  currentWebTarget = target;
+  preferences.set("webTarget", target);
+
+  if (mainWindow) {
+    const route = getCurrentRoutePath(mainWindow);
+    const nextUrl = new URL(route, getResolvedBaseUrl()).toString();
+    mainWindow.loadURL(nextUrl);
+  }
+
+  return getEffectiveWebTarget();
+});
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -50,7 +119,7 @@ function createWindow(): BrowserWindow {
     },
   });
 
-  win.loadURL(READYCUE_URL);
+  win.loadURL(getResolvedBaseUrl());
 
   win.once("ready-to-show", () => {
     win.show();
@@ -74,6 +143,12 @@ function createWindow(): BrowserWindow {
   win.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
     if (errorCode === -3) return; // Aborted navigations, ignore
     console.error(`[load] Failed: ${errorCode} ${errorDescription}`);
+    if (getEffectiveWebTarget() === "local") {
+      currentWebTarget = "prod";
+      preferences.set("webTarget", "prod");
+      win.loadURL(PROD_URL);
+      return;
+    }
     win.loadFile(path.join(__dirname, "..", "..", "assets", "offline.html"));
   });
 
@@ -96,7 +171,7 @@ app.on("ready", () => {
     mainWindow?.webContents.toggleDevTools();
   });
 
-  if (!IS_DEV) {
+  if (!isLocalUrl(getResolvedBaseUrl())) {
     setupAutoUpdater(mainWindow);
   }
 });
@@ -117,7 +192,7 @@ app.on("open-url", (event, url) => {
   if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
-    mainWindow.loadURL(`${READYCUE_URL}${route}`);
+    mainWindow.loadURL(new URL(route, getResolvedBaseUrl()).toString());
   }
 });
 
