@@ -20,4 +20,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("update-status", handler);
     return () => ipcRenderer.removeListener("update-status", handler);
   },
+  onAppCommand: (callback: (command: "browser-backward" | "browser-forward") => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      command: "browser-backward" | "browser-forward"
+    ) => callback(command);
+    ipcRenderer.on("app-command", handler);
+    return () => ipcRenderer.removeListener("app-command", handler);
+  },
 });

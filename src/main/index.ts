@@ -139,6 +139,15 @@ function createWindow(): BrowserWindow {
     return { action: "deny" };
   });
 
+  // Generic browser navigation commands (mouse back/forward buttons, OS-level app commands)
+  win.on("app-command", (_event, command) => {
+    if (command === "browser-backward") {
+      win.webContents.send("app-command", "browser-backward");
+    } else if (command === "browser-forward") {
+      win.webContents.send("app-command", "browser-forward");
+    }
+  });
+
   // Offline detection: show a retry page when load fails
   win.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
     if (errorCode === -3) return; // Aborted navigations, ignore
