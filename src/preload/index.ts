@@ -12,6 +12,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
   getWebTarget: () => ipcRenderer.invoke("get-web-target"),
   setWebTarget: (target: "prod" | "local") => ipcRenderer.invoke("set-web-target", target),
+  onAuthBridgeToken: (callback: (payload: { token: string; next?: string }) => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      payload: { token: string; next?: string }
+    ) => callback(payload);
+    ipcRenderer.on("auth-bridge-token", handler);
+    return () => ipcRenderer.removeListener("auth-bridge-token", handler);
+  },
+  consumeInitialAuthBridgeToken: () =>
+    ipcRenderer.invoke("consume-initial-auth-bridge-token") as Promise<{
+      token: string;
+      next?: string;
+    } | null>,
 
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   restartToUpdate: () => ipcRenderer.invoke("restart-to-update"),

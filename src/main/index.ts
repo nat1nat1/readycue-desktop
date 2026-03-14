@@ -48,6 +48,8 @@ const preferences = new (Store as unknown as {
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 let currentWebTarget: WebTarget = preferences.get("webTarget", "prod");
+type AuthBridgePayload = { token: string; next?: string };
+let pendingAuthBridgePayload: AuthBridgePayload | null = null;
 
 function isLocalUrl(url: string): boolean {
   try {
@@ -100,6 +102,42 @@ ipcMain.handle("set-web-target", (_event, target: WebTarget) => {
 
   return getEffectiveWebTarget();
 });
+
+ipcMain.handle("consume-initial-auth-bridge-token", () => {
+  const payload = pendingAuthBridgePayload;
+  pendingAuthBridgePayload = null;
+  return payload;
+});
+
+function parseAuthBridgeDeepLink(deepLinkUrl: string): AuthBridgePayload | null {
+  try {
+    const parsed = new URL(deepLinkUrl.replace(/^readycue:\/\//, "https://placeholder.local/"));
+    if (parsed.pathname !== "/auth-bridge") return null;
+
+    const token = parsed.searchParams.get("token");
+    if (!token) return null;
+
+    const next = parsed.searchParams.get("next") ?? undefined;
+    return { token, next };
+  } catch {
+    return null;
+  }
+}
+
+function dispatchPendingAuthBridgePayload() {
+  if (!mainWindow || !pendingAuthBridgePayload) return;
+  mainWindow.webContents.send("auth-bridge-token", pendingAuthBridgePayload);
+}
+
+function ensureAuthBridgeFallbackRoute(win: BrowserWindow) {
+  if (!pendingAuthBridgePayload) return;
+  const currentPath = getCurrentRoutePath(win);
+  if (currentPath.startsWith("/login")) return;
+
+  const loginUrl = new URL("/login", getResolvedBaseUrl());
+  loginUrl.searchParams.set("bridge_token", pendingAuthBridgePayload.token);
+  win.loadURL(loginUrl.toString());
+}
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -169,6 +207,12 @@ function createWindow(): BrowserWindow {
     }
   });
 
+  // Replay queued auth payload after renderer loads (cold start path).
+  win.webContents.on("did-finish-load", () => {
+    dispatchPendingAuthBridgePayload();
+    ensureAuthBridgeFallbackRoute(win);
+  });
+
   return win;
 }
 
@@ -197,12 +241,28 @@ app.on("activate", () => {
 // Handle readycue:// deep links (macOS)
 app.on("open-url", (event, url) => {
   event.preventDefault();
-  const route = url.replace("readycue://", "/").replace(/\/$/, "") || "/";
-  if (mainWindow) {
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.loadURL(new URL(route, getResolvedBaseUrl()).toString());
+
+  const authBridge = parseAuthBridgeDeepLink(url);
+  if (authBridge) {
+    pendingAuthBridgePayload = authBridge;
+
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+      dispatchPendingAuthBridgePayload();
+      ensureAuthBridgeFallbackRoute(mainWindow);
+    }
+    return;
   }
+
+  if (!mainWindow) return;
+
+  mainWindow.show();
+  mainWindow.focus();
+
+  // Generic deep link: strip readycue:// and load as web route
+  const route = url.replace("readycue://", "/").replace(/\/$/, "") || "/";
+  mainWindow.loadURL(new URL(route, getResolvedBaseUrl()).toString());
 });
 
 app.on("before-quit", () => {
