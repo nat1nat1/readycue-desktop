@@ -1,6 +1,6 @@
 {
   "name": "readycue-desktop",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "ReadyCue Desktop — AI interview coaching with system audio capture",
   "main": "dist/main/index.js",
   "author": "ReadyCue",

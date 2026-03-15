@@ -34,9 +34,11 @@ function rebuildMenu(mainWindow: BrowserWindow): void {
   ];
 
   if (updateStatusLabel) {
+    const isReady = updateStatusLabel.includes("ready");
     template.push({
       label: updateStatusLabel,
-      enabled: false,
+      enabled: isReady,
+      click: isReady ? () => autoUpdater.quitAndInstall(false, true) : undefined,
     });
   }
 
