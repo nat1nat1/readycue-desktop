@@ -13,6 +13,7 @@ fi
 VERSION=$(node -p "require('./package.json').version")
 TAG="v$VERSION"
 DMG="release/ReadyCue-universal.dmg"
+ZIP="release/ReadyCue-universal.zip"
 BLOCKMAP="release/ReadyCue-universal.dmg.blockmap"
 MANIFEST="release/latest-mac.yml"
 
@@ -41,12 +42,12 @@ fi
 echo "==> Compiling TypeScript..."
 npm run build
 
-# 2. Build DMG (no auto-publish)
-echo "==> Building DMG..."
+# 2. Build DMG + ZIP (no auto-publish)
+echo "==> Building DMG + ZIP..."
 npm run dist:mac -- --publish never
 
 # 3. Verify artifacts
-for f in "$DMG" "$BLOCKMAP" "$MANIFEST"; do
+for f in "$DMG" "$ZIP" "$BLOCKMAP" "$MANIFEST"; do
   if [[ ! -f "$f" ]]; then
     echo "✗ Missing artifact: $f"
     exit 1
@@ -77,7 +78,7 @@ gh release create "$TAG" \
   --repo nat1nat1/readycue-desktop \
   --title "ReadyCue Desktop $TAG" \
   --generate-notes \
-  "$DMG" "$BLOCKMAP" "$MANIFEST"
+  "$DMG" "$ZIP" "$BLOCKMAP" "$MANIFEST"
 
 echo ""
 echo "✓ Published: https://github.com/nat1nat1/readycue-desktop/releases/tag/$TAG"

@@ -25,6 +25,9 @@ mac:
     - target: dmg
       arch:
         - universal
+    - target: zip
+      arch:
+        - universal
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
