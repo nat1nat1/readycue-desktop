@@ -134,8 +134,14 @@ function ensureAuthBridgeFallbackRoute(win: BrowserWindow) {
   const currentPath = getCurrentRoutePath(win);
   if (currentPath.startsWith("/login")) return;
 
+  const token = pendingAuthBridgePayload.token;
   const loginUrl = new URL("/login", getResolvedBaseUrl());
-  loginUrl.searchParams.set("bridge_token", pendingAuthBridgePayload.token);
+  loginUrl.searchParams.set("bridge_token", token);
+  // Important: clear pending payload once token is embedded in URL.
+  // Older desktop builds may not call consumeInitialAuthBridgeToken(),
+  // which otherwise leaves this payload set forever and causes repeated
+  // fallback navigations (visible as dashboard/login flicker loops).
+  pendingAuthBridgePayload = null;
   win.loadURL(loginUrl.toString());
 }
 
