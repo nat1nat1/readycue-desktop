@@ -8,6 +8,13 @@ let updateStatusLabel = "";
 function rebuildMenu(mainWindow: BrowserWindow): void {
   if (!tray) return;
 
+  const isUpdateReady = updateStatusLabel.includes("ready");
+
+  function applyDownloadedUpdate(source: string) {
+    console.info(`[update] Applying downloaded update via ${source}`);
+    autoUpdater.quitAndInstall(true, true);
+  }
+
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: "Open ReadyCue",
@@ -34,11 +41,10 @@ function rebuildMenu(mainWindow: BrowserWindow): void {
   ];
 
   if (updateStatusLabel) {
-    const isReady = updateStatusLabel.includes("ready");
     template.push({
       label: updateStatusLabel,
-      enabled: isReady,
-      click: isReady ? () => autoUpdater.quitAndInstall(false, true) : undefined,
+      enabled: isUpdateReady,
+      click: isUpdateReady ? () => applyDownloadedUpdate("tray_ready_label") : undefined,
     });
   }
 
@@ -56,6 +62,10 @@ function rebuildMenu(mainWindow: BrowserWindow): void {
     label: "Quit",
     accelerator: "CmdOrCtrl+Q",
     click: () => {
+      if (isUpdateReady) {
+        applyDownloadedUpdate("tray_quit_with_ready_update");
+        return;
+      }
       app.quit();
     },
   });

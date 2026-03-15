@@ -5,6 +5,18 @@ export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  function installDownloadedUpdate(source: string) {
+    try {
+      console.info(`[update] Applying downloaded update via ${source}`);
+      // Use silent + force-run to avoid incomplete handoff on macOS quit/hide flows.
+      autoUpdater.quitAndInstall(true, true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "unknown quitAndInstall error";
+      console.error("[update] Failed to apply downloaded update:", message);
+      sendStatus("error", { message });
+    }
+  }
+
   function sendStatus(status: string, detail?: Record<string, unknown>) {
     mainWindow.webContents.send("update-status", { status, ...detail });
   }
@@ -39,7 +51,7 @@ export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle("restart-to-update", () => {
-    autoUpdater.quitAndInstall(false, true);
+    installDownloadedUpdate("renderer_restart_button");
   });
 
   autoUpdater.checkForUpdates();
